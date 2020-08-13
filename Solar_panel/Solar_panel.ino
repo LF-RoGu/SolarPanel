@@ -2,6 +2,8 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <Adafruit_INA219.h>
+
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 32 // OLED display height, in pixels
@@ -21,17 +23,12 @@
 #define FALSE 0
 
 
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+// Initialize the OLED display using Wire library
+SSD1306Wire  display(0x3c, D2, D1);  //D2=SDK  D1=SCK  As per labeling on NodeMCU
+
+Adafruit_INA219 ina219;
 
 uint8_t state = 0;
-
-uint16_t sensorValue = 0;
-float voltage = 0;
-float current = 0;
-float power = 0;
-float energy = 0;
-
-float power_track = 0;
 
 uint32_t previous_time_ADC = 0;
 uint32_t previous_time_OLED = 0;
@@ -45,10 +42,17 @@ uint16_t temp_time_m = 0;
 
 uint8_t flag_motor = FALSE;
 
+float shuntvoltage = 0;
+float busvoltage = 0;
+float current_mA = 0;
+float loadvoltage = 0;
+float power_mW = 0;
+float energy_mWh = 0;
+
 // the setup routine runs once when you press reset:
 void setup() {
   // initialize serial communication at 9600 bits per second:
-  Serial.begin(9600);
+  Serial.begin(115200);
 
 
   /*
@@ -65,7 +69,15 @@ void setup() {
   /*
   * OLED SetUp
   */
-  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  display.init();
+  display.flipScreenVertically();
+  display.setFont(ArialMT_Plain_10);
+  display.setTextAlignment(TEXT_ALIGN_LEFT);
+  /*
+   * INA219
+   */
+  ina219.begin();
+  ina219.setCalibration_16V_400mA();
 }
 /********************************************/
 /********************************************/
